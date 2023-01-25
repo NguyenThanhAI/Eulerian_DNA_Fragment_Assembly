@@ -21,6 +21,10 @@ class Assembler(object):
         
         
     def make_superpath(self) -> None:
+        self.merge_single_edges()
+        
+        
+    def merge_single_edges(self) -> None:
         """Gộp các cạnh nếu có thể
 
         Returns:
