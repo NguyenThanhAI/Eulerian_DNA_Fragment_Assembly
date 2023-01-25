@@ -144,6 +144,116 @@ class Read(object):
         return self.edges[n]
     
     
+    def change_x(self, x: Edge, z: Edge) -> bool:
+        """Thay đổi cạnh cuối cùng trong tập các cạnh thành cạnh mới z nếu x là cạnh cuối
+
+        Args:
+            x (Edge): Cạnh cũ ở cuối
+            z (Edge): Cạnh mới
+
+        Returns:
+            bool: True nếu cạnh cũ được thay đổi, nếu không là False
+        """
+        
+        if self.edges[-1] == x:
+            self.edges[-1] = z
+            
+            # Thêm read hiện tại và tập các read của cạnh mới
+            z.reads.append(self)
+            
+            # Xóa read hiện tại từ cạnh cũ
+            if self in x.reads:
+                x.reads.remove(self)
+                
+            return True
+        
+        return False
+    
+    
+    def change_y(self, y: Edge, z: Edge) -> bool:
+        """Thay đổi cạnh đầu tiên trong tập các cạnh của read hiện tại thành cạnh mới z nếu cạnh đầu tiên là y
+
+        Args:
+            y (Edge): Cạnh cũ ở đầu
+            z (Edge): Cạnh mới
+
+        Returns:
+            bool: True nếu cạnh cũ được thay đổi, nếu không là False
+        """
+        if self.edges[0] == y:
+            self.edges[0] = z
+            
+            # Thêm read hiện tại và tập các read của cạnh mới
+            z.reads.append(self)
+            
+            # Xóa read hiện tại từ cạnh cũ
+            if self in y.reads:
+                y.reads.remove(self)
+                
+            return True
+        
+        return False
+    
+    
+    def change_xy(self, x: Edge, y: Edge, z: Edge) -> bool:
+        """Thay đổi hai cạnh liên tiếp x, y trong đường dẫn
+    
+
+        Args:
+            x (Edge): Cạnh đầu tiên liền trước
+            y (Edge): Cạnh liền sau cạnh x
+            z (Edge): Cạnh mới thay thế hai cạnh x và cạnh y
+
+        Returns:
+            bool: True nếu hai cạnh bị thay đổi bởi z, nếu không là False
+        """
+        
+        found_xy: bool = False
+        
+        # Xét từng cặp cạnh liền nhau có phải là cạnh x là cạnh đầu tiên, y là cạnh liền cạnh x hay không:
+        for i in range(len(self.edges)-1):
+            
+            # Nếu tìm thấy x là cạnh liền trước, y là cạnh liền sau cạnh x
+            if self.edges[i] == x and self.edges[i+1] == y:
+                found_xy = True
+                
+                # Thêm cạnh z, xóa bỏ các cạnh x và cạnh y
+                self.edges[i] = z
+                self.edges[i+1] = None
+                
+                # Thêm read hiện tại vào danh sách các read của cạnh mới z
+                z.reads.append(self)
+                
+                # Xóa read hiện tại từ danh sách các read của các cạnh bị xóa x và y
+                if self in x.reads:
+                    x.reads.remove(self)
+                if self in y.reads:
+                    y.reads.remove(self)
+        
+        # Xóa tất cả các cạnh mà vị trí đó là None
+        self.edges = [e for e in self.edges if e != None]
+        
+        return found_xy
+    
+    
+    def update(self, x: Edge, y: Edge, z: Edge) -> bool:
+        """Chạy tất cả các phương thức cập nhật cạnh mới
+
+        Args:
+            x (Edge): Cạnh nếu là cạnh cuối cùng trong danh sách các cạnh sẽ bị thay thế bởi cạnh z
+            y (Edge): Cạnh nếu là cạnh đầu tiên trong danh sách các cạnh sẽ bị thay thế bởi cạnh z
+            z (Edge): Cạnh mới
+
+        Returns:
+            bool: True nếu có thay đổi, nếu không là False
+        """
+        
+        # Xét từng trường hợp
+        changed: List[bool] = [self.change_xy(x=x, y=y, z=z), self.change_x(x=x, z=z), self.change_y(y=y, z=z)]
+        
+        return any(changed)
+    
+    
 class Graph(object):
     
     def __init__(self, seqs: Optional[Loader], k: int, threshold: int, error_correct: bool = False) -> None:
@@ -257,3 +367,77 @@ class Graph(object):
         
         return edge
     
+
+    def merge(self, x: Edge, y: Edge) -> Edge:
+        """Gộp hai cạnh kề nhau x và y
+
+        Args:
+            x (Edge): Cạnh liền trước
+            y (Edge): Cạnh liền sau
+
+        Returns:
+            Edge: Cạnh kết quả là cạnh được gộp hai cạnh x và cạnh y
+        """
+        
+        # Lấy các đỉnh là đỉnh vào của cạnh x, đỉnh ra của cạnh x và đỉnh ra của cạnh y
+        in_vertex: Vertex = x.in_vertex
+        mid_vertex: Vertex = x.out_vertex
+        out_vertex: Vertex = y.out_vertex
+        
+        assert mid_vertex == y.in_vertex
+        
+        # Kiểm tra các đỉnh vẫn còn kích hoạt (không có đỉnh nào không có cạnh vào hoặc cạnh ra)
+        
+        if len(in_vertex.out_edges) == 0 or len(mid_vertex.in_edges) == 0 or \
+            len(mid_vertex.out_edges) == 0 or len(out_vertex.in_edges) == 0:
+                return None
+            
+        # Tạo chuỗi đại diện mới cho cạnh mới        
+        y_length: int = len(y.sequence)
+        seq: str = x.sequence + y.sequence[self.k-1:]
+        
+        # Tạo một cạnh mới        
+        z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
+        
+        # Cập nhật các đỉnh và đường đi
+        if x in in_vertex.out_edges:
+            in_vertex.out_edges.remove(x)
+        if x in mid_vertex.in_edges:
+            mid_vertex.in_edges.remove(x)
+        if y in mid_vertex.out_edges:
+            mid_vertex.out_edges.remove(y)
+        if y in out_vertex.in_edges:
+            out_vertex.in_edges.remove(y)
+        for read in self.read_list:
+            read.update(x=x, y=y, z=z)
+            
+        return z
+    
+    
+    def clean(self) -> None:
+        """Loại bỏ các cạnh và đỉnh trống từ đồ thị
+        """
+        
+        # Loại bỏ các đỉnh rỗng
+        to_remove_vertex: List[Vertex] = []
+        for vertex in self.vertex_list:
+            if len(vertex.in_edges) == 0 and len(vertex.out_edges) == 0:
+                to_remove_vertex.append(vertex)
+                
+        # Xóa các đỉnh rỗng
+        for vertex in to_remove_vertex:
+            self.vertex_list.remove(vertex)
+            
+        # Loại bỏ các cạnh rỗng
+        to_remove_edge: List[Edge] = []
+        for edge in self.edge_list:
+            if len(edge.reads) == 0:
+                to_remove_edge.append(edge)
+            elif edge.in_vertex not in self.vertex_list:
+                to_remove_edge.append(edge)
+            elif edge.out_vertex not in self.vertex_list:
+                to_remove_edge.append(edge)
+                
+        # Xóa các cạnh rỗng
+        for edge in to_remove_edge:
+            self.edge_list.remove(edge)
