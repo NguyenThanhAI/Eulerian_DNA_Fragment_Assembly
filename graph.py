@@ -254,6 +254,29 @@ class Read(object):
         return any(changed)
     
     
+    def check_consecutive_edges(self, x: Edge, y: Edge) -> bool:
+        """
+        Kiểm tra xem hai cạnh x và y có phải là hai cạnh liền kề trong cùng một read này hay không
+
+        Args:
+            x (Edge): Cạnh liền trước hoặc sau
+            y (Edge): Cạnh liền trước hoặc sau
+
+        Returns:
+            bool: Nếu hai cạnh x và y kề nhau
+        """
+        
+        found_xy: bool = False
+        
+        # Xét từng cặp cạnh liền nhau có phải là cạnh x là cạnh đầu tiên, y là cạnh liền cạnh x hoặc ngược lại hay không:
+        for i in range(len(self.edges)-1):
+            
+            if (self.edges[i] == x and self.edges[i+1] == y) or (self.edges[i] == y and self.edges[i+1] == x):
+                found_xy = True
+                
+        return found_xy
+    
+    
 class Graph(object):
     
     def __init__(self, seqs: Optional[Loader], k: int, threshold: int, error_correct: bool = False) -> None:

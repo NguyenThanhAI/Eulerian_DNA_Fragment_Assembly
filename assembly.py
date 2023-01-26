@@ -36,21 +36,29 @@ class Assembler(object):
             vertex: Vertex = vertex_list.pop(0)
             num_in_edge: int = len(vertex.in_edges)
             num_out_edge: int = len(vertex.out_edges)
+            # Đỉnh đầu hoặc đỉnh kết thúc nên bỏ qua
             if (num_in_edge == 0 or num_out_edge == 0) and abs(num_in_edge - num_out_edge) == 1:
                 continue
+            # Đỉnh đã bị loại bỏ
             if num_in_edge == 0 and num_out_edge == 0:
                 continue
-            in_edges: List[Edge] = vertex.in_edges
-            out_edges: List[Edge] = vertex.out_edges
+            in_edges: List[Edge] = vertex.in_edges.copy()
+            out_edges: List[Edge] = vertex.out_edges.copy()
+            # Nếu là đỉnh cân bằng, ta xét xem có thể gộp các cạnh vào và cạnh ra được không
             if num_in_edge == num_out_edge:
                 #if num_in_edge == 1:
+                # So sánh từng cạnh với nhau
                 for x in in_edges:
+                    x_reads = x.reads.copy()
                     for y in out_edges:
-                        for read in x.reads:
+                        # Kiểm tra từng read trong x xem x có thuộc vào read nào trong y hay không
+                        for read in x_reads:
                             # Kiểm tra x và y có cùng một read
-                            if y in read:
-                                if self.graph.merge(x=x, y=y):
-                                    self.graph.clean()
+                            if read in y.reads:
+                                # Kiểm tra x và y có liền kề nhau trong read này hay không
+                                if read.check_consecutive_edges(x=x, y=y):
+                                    if self.graph.merge(x=x, y=y):
+                                        self.graph.clean()
                                     
         self.graph.clean()
         
