@@ -464,3 +464,134 @@ class Graph(object):
         # Xóa các cạnh rỗng
         for edge in to_remove_edge:
             self.edge_list.remove(edge)
+            
+            
+    def adjust_multiplicities(self) -> None:
+        """
+        Điều chỉnh bội số của các cạnh sau khi ghép các cạnh đơn.
+        Ta sẽ kiểm tra hiệu của bậc ra và bậc vào của mỗi đỉnh,
+        nếu bậc ra nhỏ hơn bậc vào thì các cạnh ra sẽ có bội là abs(diff) + 1 và ngược lại.
+        Nhưng một điều nữa, để chắc chắn ta có cần xét đến các cạnh vào và ra cùng một Read trong trường hợp,
+        có nhiều vào và nhiều cạnh ra, trong tập cạnh vào hoặc cạnh ra có cạnh bội, có cạnh đơn??????????
+        """
+        
+        vertex_list: List[Vertex] = self.vertex_list.copy()
+        while len(vertex_list) != 0:
+            vertex: Vertex = vertex_list.pop(0)
+            num_in_edge: int = len(vertex.in_edges)
+            num_out_edge: int = len(vertex.out_edges)
+            diff: int = num_out_edge - num_in_edge
+            if diff == 0 or ((num_in_edge == 0 or num_out_edge == 0) and abs(diff) == 1):
+                continue
+            else:
+                if diff < 0:
+                    for edge in vertex.out_edges:
+                        edge.multiplicities = abs(diff) + 1
+                else:
+                    for edge in vertex.in_edges:
+                        edge.multiplicities = abs(diff) + 1
+    
+    
+    def merge_mul(self, x: Edge, y: Edge) -> Edge:
+        """
+        Gộp hai cạnh x và y trong đó một trong hai cạnh là cạnh bội
+
+        Args:
+            x (Edge): Cạnh trước
+            y (Edge): Cạnh sau
+
+        Returns:
+            Edge: Cạnh mới được tạo ra
+        """
+        
+        # Lấy các đỉnh là đỉnh vào của cạnh x, đỉnh ra của cạnh x và đỉnh ra của cạnh y
+        in_vertex: Vertex = x.in_vertex
+        mid_vertex: Vertex = x.out_vertex
+        out_vertex: Vertex = y.out_vertex        
+        
+        assert mid_vertex == y.in_vertex
+        
+        # Kiểm tra các đỉnh vẫn còn kích hoạt (không có đỉnh nào không có cạnh vào hoặc cạnh ra)
+        
+        if len(in_vertex.out_edges) == 0 or len(mid_vertex.in_edges) == 0 or \
+            len(mid_vertex.out_edges) == 0 or len(out_vertex.in_edges) == 0:
+                return None
+            
+        # Tạo chuỗi đại diện mới cho cạnh mới        
+        y_length: int = len(y.sequence)
+        seq: str = x.sequence + y.sequence[self.k-1:]
+        
+        # Tạo một cạnh mới        
+        z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
+        
+        # Cập nhật bội số
+        x.multiplicities = x.multiplicities - 1
+        y.multiplicities = y.multiplicities - 1
+        
+        if x.multiplicities == 0:
+            if x in in_vertex.out_edges:
+                in_vertex.out_edges.remove(x)
+            if x in mid_vertex.in_edges:
+                mid_vertex.in_edges.remove(x)
+
+        
+        if y.multiplicities == 0:
+            if y in mid_vertex.out_edges:
+                mid_vertex.out_edges.remove(y)
+            if y in out_vertex.in_edges:
+                out_vertex.in_edges.remove(y)
+                
+                
+        '''x_reads: List[Read] = x.reads.copy()
+        y_reads: List[Read] = y.reads.copy()
+        for x_read in x_reads:
+            consider_x: bool = True
+            for y_read in y_reads:
+                consider_y: bool = True
+                if x_read == y_read:
+                    x_read.edges.append(z)
+                else:
+                    if x.multiplicities == 0 and consider_x:
+                        consider_x = False
+                        if x in x_read:
+                            x_read.edges.remove(x)
+                        x_read.edges.append(z)
+                        z.reads.append(x_read)
+                        if x_read in x.reads:
+                            x.reads.remove(x_read)
+                    if y.multiplicities == 0 and consider_y:
+                        consider_y = False
+                        if y in y_read:
+                            y_read.edges.remove(y)
+                        y_read.edges.append(z)
+                        z.reads.append(y_read)
+                        if y_read in y.reads:
+                            y.reads.remove(y_read)'''
+        
+        read_list: List[Read] = self.read_list.copy()                   
+        for read in read_list:
+            if x in read.edges and y not in read.edges:
+                read.edges.append(z)
+                z.reads.append(read)
+                if x.multiplicities == 0:
+                    read.edges.remove(x)
+                    x.reads.remove(read)
+            elif y in read.edges and x not in read.edges:
+                read.edges.append(z)
+                z.reads.append(read)
+                if y.multiplicities == 0:
+                    read.edges.remove(y)
+                    y.reads.remove(read)
+            elif x in read.edges and y in read.edges:
+                read.edges.append(z)
+                z.reads.append(read)
+                if x.multiplicities == 0:
+                    read.edges.remove(x)
+                    x.reads.remove(read)
+                if y.multiplicities == 0:
+                    read.edges.remove(y)
+                    y.reads.remove(read)
+                
+                        
+                
+        return z
