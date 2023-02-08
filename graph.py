@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Any
 from loader import Loader
 #from vertex import Vertex
 #from edge import Edge
@@ -83,6 +83,7 @@ class Edge(object):
         self.in_vertex: Vertex = in_vertex
         self.out_vertex: Vertex = out_vertex
         self.reads: List[Read] = []
+        self.position_in_read: Dict[Read, List[int]] = {}
         self.multiplicities: int = 1
         self.visited: int = 0
         
@@ -130,6 +131,8 @@ class Read(object):
         self.sequence: str = sequence
         self.read_id: int = read_id
         self.edges: List[Edge] = []
+        self.front_of: Dict[Any, Tuple[int, int]] = {}
+        self.behind_of: Dict[Any, Tuple[int, int]] = {}
         
         
     def __getitem__(self, n: int) -> Edge:
@@ -142,6 +145,24 @@ class Read(object):
             Edge: Cạnh ở vị trí cần được lấy
         """
         return self.edges[n]
+    
+    
+    def __len__(self) -> int:
+        """Trả về độ dài của chuỗi đại diện cho Read
+
+        Returns:
+            int: Độ dài của chuỗi đại diện cho Read
+        """
+        return len(self.sequence)
+    
+    
+    def __str__(self) -> str:
+        """Trả vệ nội dung chuỗi đại diện cho Read
+
+        Returns:
+            str: Chuỗi đại diện cho Read
+        """
+        return self.sequence
     
     
     def change_x(self, x: Edge, z: Edge) -> bool:
@@ -306,39 +327,105 @@ class Graph(object):
             read: Read = Read(sequence=seq, read_id=s)
             self.read_list.append(read)
             
+        self.align_read()
+                    
+        read_list: List[Read] = self.read_list.copy()
+        for read in read_list:
+            seq: str = read.sequence
             # Tạo các đỉnh và các cạnh
             for i in range(len(seq)-k+1):
                 # Tạo k-mer
                 k_mer: str = seq[i:i+k]
                 prefix: str = k_mer[:k-1]
                 suffix: str = k_mer[1:]
-                
+
                 # Tạo đỉnh tiền tố
                 if prefix in self.vertex_dict:
                     p_vertex: Vertex = self.vertex_dict[prefix]
                 else:
                     p_vertex: Vertex = self.new_vertex(sequence=prefix)
-                
+
                 # Tạo đỉnh hậu tố
                 if suffix in self.vertex_dict:
                     s_vertex: Vertex = self.vertex_dict[suffix]
                 else:
                     s_vertex: Vertex = self.new_vertex(sequence=suffix)
-                    
+
                 # Tạo cạnh
                 if k_mer in self.edge_dict:
                     edge: Edge = self.edge_dict[k_mer]
+                    # Kiểm tra xem edge này có nằm trong đoạn trùng của read hiện tại với một read khác hay không,
+                    # Nếu có trùng thì bội giữ nguyên,
+                    # còn không bội cộng thêm 1
+                    exist: bool = False
+                    overlap_reads = read.front_of
+                    for over_read in overlap_reads:
+                        pos: Tuple[int, int] = overlap_reads[over_read]
+                        if i >= pos[0]:
+                            if over_read in edge.position_in_read:
+                                position_in_overlap_read = edge.position_in_read[over_read]
+                                for position in position_in_overlap_read:
+                                    if position + len(edge.sequence) <= pos[1]:
+                                        exist = True
+                    
+                    overlap_reads = read.behind_of
+                    for over_read in overlap_reads:
+                        pos: Tuple[int, int] = overlap_reads[over_read]
+                        if i + len(edge.sequence) <= pos[1]:
+                            if over_read in edge.position_in_read:
+                                position_in_overlap_read = edge.position_in_read[over_read]
+                                for position in position_in_overlap_read:
+                                    if position >= pos[0]:
+                                        exist = True
+                                
+                    if not exist:
+                        edge.multiplicities += 1
                 else:
                     edge: Edge = self.new_edge(in_vertex=p_vertex, out_vertex=s_vertex, sequence=k_mer)
-                    
+
                 # Thêm cạnh vào danh sách cạnh của read
                 read.edges.append(edge)
                 # Thêm read vào danh sách read của cạnh
                 edge.reads.append(read)
+                # Vị trí của ký tự đầu tiên của edge trong read
+                if read not in edge.position_in_read:
+                    edge.position_in_read[read] = [i]
+                else:
+                    edge.position_in_read[read].append(i)
+
+            for i, vertex in enumerate(self.vertex_list):
+                print(i, vertex, len(vertex.out_edges) - len(vertex.in_edges))
+    
+     
+    @staticmethod
+    def overlap(first_str: str, second_str: str, min_length: int=5) -> int:
+        pos: int = -1
+        for i in range(min_length, min(len(first_str), len(second_str)) + 1):
+            suff: str = first_str[-i:]
+            pref: str = second_str[:i]
+            if suff == pref:    
+                pos = i
+
+        return pos
+    
+    
+    def align_read(self) -> None:
+        read_list: List[Read] = self.read_list.copy()
+        while len(read_list) > 0:
+            first = read_list.pop(0)
+            the_rest = read_list.copy()
+            for second in the_rest:
+                first_pos: int = self.overlap(first_str=first.sequence, second_str=second.sequence)
+                second_pos: int = self.overlap(first_str=second.sequence, second_str=first.sequence)
                 
-        for i, vertex in enumerate(self.vertex_list):
-            print(i, vertex, len(vertex.out_edges) - len(vertex.in_edges))
-                
+                if first_pos != -1:
+                    first.front_of[second] = (len(first) - first_pos, first_pos)
+                    second.behind_of[first] = (len(first) - first_pos, first_pos)
+                    
+                if second_pos != -1:
+                    second.front_of[first] = (len(second) - second_pos, second_pos)
+                    first.behind_of[second] = (len(second) - second_pos, second_pos)
+                    
                 
     def __str__(self) -> str:
         """_summary_
