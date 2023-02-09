@@ -393,8 +393,14 @@ class Graph(object):
                 else:
                     edge.position_in_read[read].append(i)
 
-            for i, vertex in enumerate(self.vertex_list):
-                print(i, vertex, len(vertex.out_edges) - len(vertex.in_edges))
+        for i, vertex in enumerate(self.vertex_list):
+            in_degree: int = 0
+            for in_edge in vertex.in_edges:
+                in_degree += in_edge.multiplicities
+            out_degree: int = 0
+            for out_edge in vertex.out_edges:
+                out_degree += out_edge.multiplicities
+            print(i, vertex, len(vertex.out_edges) - len(vertex.in_edges), out_degree - in_degree)
     
      
     @staticmethod
