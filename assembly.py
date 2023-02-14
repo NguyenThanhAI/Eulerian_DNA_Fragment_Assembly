@@ -76,11 +76,18 @@ class Assembler(object):
             diff = len(vertex.out_edges) - len(vertex.in_edges)
             if diff != 0:
                 non_bal += 1
+                in_degree: int = 0
+                for in_edge in vertex.in_edges:
+                    in_degree += in_edge.multiplicities
+                out_degree: int = 0
+                for out_edge in vertex.out_edges:
+                    out_degree += out_edge.multiplicities
+                diff_mul = out_degree - in_degree
                 print(i, vertex, diff)
-                diff_list.append(diff)
+                diff_list.append(diff_mul)
             
         
-        if sum(diff_list) == 0 and diff_list[0] * diff_list[-1] == -1:
+        if all(d == 0 for d in diff_list[1:-1]) and diff_list[0] * diff_list[-1] == -1:
             return True
         else:
             return False
