@@ -294,6 +294,12 @@ class Read(object):
             
             if (self.edges[i] == x and self.edges[i+1] == y) or (self.edges[i] == y and self.edges[i+1] == x):
                 found_xy = True
+        '''positions_x: List[int] = x.position_in_read[self]
+        positions_y: List[int] = y.position_in_read[self]
+        for pos_x in positions_x:
+            for pos_y in positions_y:
+                if abs(pos_x - pos_y) == 1:
+                    found_xy = True'''
                 
         return found_xy
     
@@ -327,7 +333,7 @@ class Graph(object):
             read: Read = Read(sequence=seq, read_id=s)
             self.read_list.append(read)
             
-        self.align_read()
+        self.align_read(min_length=k)
                     
         read_list: List[Read] = self.read_list.copy()
         for read in read_list:
@@ -415,14 +421,14 @@ class Graph(object):
         return pos
     
     
-    def align_read(self) -> None:
+    def align_read(self, min_length: int) -> None:
         read_list: List[Read] = self.read_list.copy()
         while len(read_list) > 0:
             first = read_list.pop(0)
             the_rest = read_list.copy()
             for second in the_rest:
-                first_pos: int = self.overlap(first_str=first.sequence, second_str=second.sequence)
-                second_pos: int = self.overlap(first_str=second.sequence, second_str=first.sequence)
+                first_pos: int = self.overlap(first_str=first.sequence, second_str=second.sequence, min_length=min_length)
+                second_pos: int = self.overlap(first_str=second.sequence, second_str=first.sequence, min_length=min_length)
                 
                 if first_pos != -1:
                     first.front_of[second] = (len(first) - first_pos, first_pos)
@@ -514,6 +520,10 @@ class Graph(object):
         
         # Tạo một cạnh mới        
         z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
+        
+        # Kiểm tra bội số của cạnh x và y
+        assert x.multiplicities == y.multiplicities
+        z.multiplicities = x.multiplicities
         
         # Cập nhật các đỉnh và đường đi
         if x in in_vertex.out_edges:
