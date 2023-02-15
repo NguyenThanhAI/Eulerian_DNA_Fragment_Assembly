@@ -1,6 +1,6 @@
 import copy
 import math
-from typing import List, Dict, Optional, Tuple, Any
+from typing import List, Dict, Optional, Tuple, Any, OrderedDict
 from loader import Loader
 #from vertex import Vertex
 #from edge import Edge
@@ -131,6 +131,8 @@ class Read(object):
         self.sequence: str = sequence
         self.read_id: int = read_id
         self.edges: List[Edge] = []
+        self.position_to_edge: OrderedDict[int, Edge] = OrderedDict()
+        self.edge_to_positions: Dict[Edge, List[int]] = {}
         self.front_of: Dict[Any, Tuple[int, int]] = {}
         self.behind_of: Dict[Any, Tuple[int, int]] = {}
         
@@ -176,7 +178,7 @@ class Read(object):
             bool: True nếu cạnh cũ được thay đổi, nếu không là False
         """
         
-        if self.edges[-1] == x:
+        '''if self.edges[-1] == x:
             self.edges[-1] = z
             
             # Thêm read hiện tại và tập các read của cạnh mới
@@ -186,6 +188,24 @@ class Read(object):
             if self in x.reads:
                 x.reads.remove(self)
                 
+            return True'''
+        pos_of_edges: List[int] = list(self.position_to_edge.keys())
+        if self.position_to_edge[pos_of_edges[-1]] == x:
+            self.position_to_edge[pos_of_edges[-1]] = z
+            
+            # Thay x bằng z
+            for i in range(len(self.edges)):
+                if self.edges[i] == x:
+                    self.edges[i] = z
+                    
+            
+            # Thêm read hiện tại và tập các read của cạnh mới
+            z.reads.append(self)
+            # Xóa read hiện tại từ cạnh cũ
+            
+            if self in x.reads:
+                x.reads.remove(self)
+            
             return True
         
         return False
@@ -201,7 +221,7 @@ class Read(object):
         Returns:
             bool: True nếu cạnh cũ được thay đổi, nếu không là False
         """
-        if self.edges[0] == y:
+        '''if self.edges[0] == y:
             self.edges[0] = z
             
             # Thêm read hiện tại và tập các read của cạnh mới
@@ -211,7 +231,26 @@ class Read(object):
             if self in y.reads:
                 y.reads.remove(self)
                 
-            return True
+            return True'''
+        
+        pos_of_edges: List[int] = list(self.position_to_edge.keys())
+        if self.position_to_edge[pos_of_edges[0]] == y:
+            self.position_to_edge[pos_of_edges[0]] = z
+            
+            # Thay y bằng z
+            for i in range(len(self.edges)):
+                if self.edges[i] == y:
+                    self.edges[i] = z
+            
+            # Thêm read hiện tại và tập các read của cạnh mới
+            z.reads.append(self)
+            
+            # Xóa read hiện tại từ cạnh cũ
+            if self in y.reads:
+                y.reads.remove(self)
+                
+            return True     
+            
         
         return False
     
@@ -231,7 +270,7 @@ class Read(object):
         
         found_xy: bool = False
         
-        # Xét từng cặp cạnh liền nhau có phải là cạnh x là cạnh đầu tiên, y là cạnh liền cạnh x hay không:
+        '''# Xét từng cặp cạnh liền nhau có phải là cạnh x là cạnh đầu tiên, y là cạnh liền cạnh x hay không:
         for i in range(len(self.edges)-1):
             
             # Nếu tìm thấy x là cạnh liền trước, y là cạnh liền sau cạnh x
@@ -252,7 +291,36 @@ class Read(object):
                     y.reads.remove(self)
         
         # Xóa tất cả các cạnh mà vị trí đó là None
+        self.edges = [e for e in self.edges if e != None]'''
+        pos_of_edges: List[int] = list(self.position_to_edge.keys())
+        for i in range(len(pos_of_edges)-1):
+            if self.position_to_edge[pos_of_edges[i]] == x and self.position_to_edge[pos_of_edges[i+1]] == y:
+                found_xy = True
+                
+                # Thêm cạnh z, xóa bỏ các cạnh x và cạnh y
+                self.position_to_edge[pos_of_edges[i]] = z
+                self.position_to_edge[pos_of_edges[i+1]] = None
+                
+                for j in range(len(self.edges)):
+                    if self.edges[j] == x:
+                        self.edges[j] == z
+                    if self.edges[j] == y:
+                        self.edges[j] = None
+                        
+                # Thêm read hiện tại vào danh sách các read của cạnh mới z
+                z.reads.append(self)
+                
+                # Xóa read hiện tại từ danh sách các read của các cạnh bị xóa x và y
+                if self in x.reads:
+                    x.reads.remove(self)
+                if self in y.reads:
+                    y.reads.remove(self)
+                
+        # Xóa tất cả các cạnh mà vị trí đó là None
         self.edges = [e for e in self.edges if e != None]
+        for pos in pos_of_edges:
+            if self.position_to_edge[pos] is None:
+                del self.position_to_edge[pos]        
         
         return found_xy
     
@@ -290,9 +358,13 @@ class Read(object):
         found_xy: bool = False
         
         # Xét từng cặp cạnh liền nhau có phải là cạnh x là cạnh đầu tiên, y là cạnh liền cạnh x hoặc ngược lại hay không:
-        for i in range(len(self.edges)-1):
+        '''for i in range(len(self.edges)-1):
             
             if (self.edges[i] == x and self.edges[i+1] == y) or (self.edges[i] == y and self.edges[i+1] == x):
+                found_xy = True'''
+        pos_of_edges: List[int] = list(self.position_to_edge.keys())
+        for i in range(len(pos_of_edges)-1):
+            if (self.position_to_edge[pos_of_edges[i]] == x and self.position_to_edge[pos_of_edges[i+1]] == y) or (self.position_to_edge[pos_of_edges[i]] == y and self.position_to_edge[pos_of_edges[i+1]] == x):
                 found_xy = True
         '''positions_x: List[int] = x.position_in_read[self]
         positions_y: List[int] = y.position_in_read[self]
@@ -302,6 +374,9 @@ class Read(object):
                     found_xy = True'''
                 
         return found_xy
+    
+    def get_edges_position(self) -> List[int]:
+        return self.position_to_edge.keys()
     
     
 class Graph(object):
@@ -398,6 +473,11 @@ class Graph(object):
                     edge.position_in_read[read] = [i]
                 else:
                     edge.position_in_read[read].append(i)
+                if edge not in read.edge_to_positions:
+                    read.edge_to_positions[edge] = [i]
+                else:
+                    read.edge_to_positions[edge].append(i)
+                read.position_to_edge[i] = edge
 
         for i, vertex in enumerate(self.vertex_list):
             in_degree: int = 0
