@@ -201,10 +201,14 @@ class Read(object):
             
             # Thêm read hiện tại và tập các read của cạnh mới
             z.reads.append(self)
-            # Xóa read hiện tại từ cạnh cũ
             
-            if self in x.reads:
-                x.reads.remove(self)
+            self.add_edge_position(x=x, z=z, position=pos_of_edges[-1])
+            
+            if len(self.edge_to_positions[x]) == 0:
+                # Xóa read hiện tại từ cạnh cũ
+                del self.edge_to_positions[x]
+                if self in x.reads:
+                    x.reads.remove(self)
             
             return True
         
@@ -245,9 +249,13 @@ class Read(object):
             # Thêm read hiện tại và tập các read của cạnh mới
             z.reads.append(self)
             
-            # Xóa read hiện tại từ cạnh cũ
-            if self in y.reads:
-                y.reads.remove(self)
+            self.add_edge_position(x=y, z=z, position=pos_of_edges[0])
+            
+            if len(self.edge_to_positions[y]) == 0:
+                # Xóa read hiện tại từ cạnh cũ
+                del self.edge_to_positions[y]
+                if self in y.reads:
+                    y.reads.remove(self)
                 
             return True     
             
@@ -303,18 +311,26 @@ class Read(object):
                 
                 for j in range(len(self.edges)):
                     if self.edges[j] == x:
-                        self.edges[j] == z
+                        self.edges[j] = z
                     if self.edges[j] == y:
                         self.edges[j] = None
                         
                 # Thêm read hiện tại vào danh sách các read của cạnh mới z
                 z.reads.append(self)
                 
+                self.add_edge_position(x=x, z=z, position=pos_of_edges[i])
+                # Đối với y thì không thế vị trí z vào vị trí y hiện tại
+                self.add_edge_position(x=y, z=z, position=pos_of_edges[i+1], replace_pos=False)
+                
                 # Xóa read hiện tại từ danh sách các read của các cạnh bị xóa x và y
-                if self in x.reads:
-                    x.reads.remove(self)
-                if self in y.reads:
-                    y.reads.remove(self)
+                if len(self.edge_to_positions[x]) == 0:
+                    del self.edge_to_positions[x]
+                    if self in x.reads:
+                        x.reads.remove(self)
+                if len(self.edge_to_positions[y]) == 0:
+                    del self.edge_to_positions[y]
+                    if self in y.reads:
+                        y.reads.remove(self)
                 
         # Xóa tất cả các cạnh mà vị trí đó là None
         self.edges = [e for e in self.edges if e != None]
@@ -378,6 +394,24 @@ class Read(object):
     def get_edges_position(self) -> List[int]:
         return self.position_to_edge.keys()
     
+    
+    def add_edge_position(self, x: Edge, z: Edge, position: int, replace_pos: bool=True) -> None:
+        # Đối với y thì không thế vị trí z vào vị trí y hiện tại
+        if replace_pos:
+            if self not in z.position_in_read:
+                    z.position_in_read[self] = [position]
+            else:
+                z.position_in_read[self].append(position)
+
+            if z not in self.edge_to_positions:
+                self.edge_to_positions[z] = [position]
+            else:
+                self.edge_to_positions[z].append(position)
+            
+        self.edge_to_positions[x].remove(position)
+        x.position_in_read[self].remove(position)
+        
+        assert self.edge_to_positions[x] == x.position_in_read[self]
     
 class Graph(object):
     
