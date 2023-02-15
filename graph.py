@@ -654,6 +654,59 @@ class Graph(object):
         return z
     
     
+    def merge_mul(self, x: Edge, y: Edge) -> Edge:
+        """
+        Gộp hai cạnh x và y trong đó một trong hai cạnh là cạnh bội
+        Args:
+            x (Edge): Cạnh trước
+            y (Edge): Cạnh sau
+        Returns:
+            Edge: Cạnh mới được tạo ra
+        """
+        
+        # Lấy các đỉnh là đỉnh vào của cạnh x, đỉnh ra của cạnh x và đỉnh ra của cạnh y
+        in_vertex: Vertex = x.in_vertex
+        mid_vertex: Vertex = x.out_vertex
+        out_vertex: Vertex = y.out_vertex        
+
+        assert mid_vertex == y.in_vertex
+        
+        # Kiểm tra các đỉnh vẫn còn kích hoạt (không có đỉnh nào không có cạnh vào hoặc cạnh ra)
+
+        if len(in_vertex.out_edges) == 0 or len(mid_vertex.in_edges) == 0 or \
+            len(mid_vertex.out_edges) == 0 or len(out_vertex.in_edges) == 0:
+                return None
+            
+        # Tạo chuỗi đại diện mới cho cạnh mới        
+        y_length: int = len(y.sequence)
+        seq: str = x.sequence + y.sequence[self.k-1:]
+        
+        # Tạo một cạnh mới        
+        z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
+        
+        # Cập nhật bội số
+        x.multiplicities = x.multiplicities - 1
+        y.multiplicities = y.multiplicities - 1
+        
+        if x.multiplicities == 0:
+            if x in in_vertex.out_edges:
+                in_vertex.out_edges.remove(x)
+            if x in mid_vertex.in_edges:
+                mid_vertex.in_edges.remove(x)
+
+
+        if y.multiplicities == 0:
+            if y in mid_vertex.out_edges:
+                mid_vertex.out_edges.remove(y)
+            if y in out_vertex.in_edges:
+                out_vertex.in_edges.remove(y)
+                
+        for read in self.read_list:
+            read.change_xy(x=x, y=y, z=z)
+            
+        return z
+    
+    
     def clean(self) -> None:
         """Loại bỏ các cạnh và đỉnh trống từ đồ thị
         """

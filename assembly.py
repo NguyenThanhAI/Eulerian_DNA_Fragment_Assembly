@@ -22,6 +22,7 @@ class Assembler(object):
         
     def make_superpath(self) -> None:
         self.merge_single_edges()
+        self.merge_multiple_edges()
         
         
     def merge_single_edges(self) -> None:
@@ -61,6 +62,35 @@ class Assembler(object):
                                         self.graph.clean()
                                     
         self.graph.clean()
+        
+        
+    def merge_multiple_edges(self) -> None:
+        """
+        Gộp các cạnh bội
+        """
+        vertex_list: List[Vertex] = self.graph.vertex_list.copy()
+        while len(vertex_list) != 0:
+            vertex: Vertex = vertex_list.pop(0)
+            num_in_edge: int = len(vertex.in_edges)
+            num_out_edge: int = len(vertex.out_edges)
+            diff: int = num_out_edge - num_in_edge
+            if (num_in_edge == 0 or num_out_edge == 0) and abs(diff) == 1:
+                continue
+            if num_in_edge == 0 and num_out_edge == 0:
+                continue
+            #assert diff != 0, print(vertex)
+            in_edges: List[Edge] = vertex.in_edges.copy()
+            out_edges: List[Edge] = vertex.out_edges.copy()
+            for x in in_edges:
+                x_reads = x.reads.copy()
+                for y in out_edges:
+                    for read in x_reads:
+                        if read in y.reads:
+                            if read.check_consecutive_edges(x=x, y=y):
+                                print("{} và {} gộp được".format(x.sequence, y.sequence))
+                                if self.graph.merge_mul(x=x, y=y):
+                                    self.graph.clean()
+                                    break
         
     
     def is_eulerian(self) -> bool:
