@@ -687,6 +687,17 @@ class Graph(object):
 
         assert mid_vertex == y.in_vertex
         
+        # Kiểm tra là trường hợp merge nào (x là cạnh đơn y là cạnh bội, x là cạnh bội y là cạnh đơn, x và y là cạnh đơn)
+        if x.multiplicities > y.multiplicities:
+            # x là cạnh bội y là cạnh đơn
+            case: int = 1
+        elif x.multiplicities < y.multiplicities:
+            # x là cạnh đơn y là cạnh bội
+            case: int = 2
+        elif x.multiplicities == y.multiplicities:
+            # x và y là cạnh đơn
+            case: int = 3
+        
         # Kiểm tra các đỉnh vẫn còn kích hoạt (không có đỉnh nào không có cạnh vào hoặc cạnh ra)
 
         if len(in_vertex.out_edges) == 0 or len(mid_vertex.in_edges) == 0 or \
@@ -716,9 +727,19 @@ class Graph(object):
                 mid_vertex.out_edges.remove(y)
             if y in out_vertex.in_edges:
                 out_vertex.in_edges.remove(y)
-                
-        for read in self.read_list:
-            read.change_xy(x=x, y=y, z=z)
+        
+    
+        if case == 1:
+            for read in self.read_list:
+                read.change_xy(x=x, y=y, z=z)
+                read.change_y(y=y, z=z)
+        elif case == 2:
+            for read in self.read_list:
+                read.change_xy(x=x, y=y, z=z)
+                read.change_x(x=x, z=z)
+        elif case == 3:
+            for read in self.read_list:
+                read.update(x=x, y=y, z=z)                
             
         return z
     
