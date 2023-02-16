@@ -750,3 +750,18 @@ class Graph(object):
         # Xóa các cạnh rỗng
         for edge in to_remove_edge:
             self.edge_list.remove(edge)
+            
+            
+    def check_all_visited(self) -> bool:
+        """Kiểm tra xem tất cả các cạnh đã được đi qua chưa bằng cách so sánh số lần đi qua có bằng số bội của cạnh hay không
+
+        Returns:
+            bool: Trả về True nếu tất cả các cạnh đã được đi qua
+        """
+        all_visited: bool = True
+        for edge in self.edge_list:
+            if edge.visited < edge.multiplicities:
+                all_visited = False
+                break
+            
+        return all_visited

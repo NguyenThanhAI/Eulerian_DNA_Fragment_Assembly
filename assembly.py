@@ -121,3 +121,45 @@ class Assembler(object):
             return True
         else:
             return False
+        
+        
+    def dfs_visit(self, path: List[Edge], vertex: Vertex, end_vertex: Vertex) -> Tuple[List[Edge], bool, bool]:
+        
+        out_edges: List[Edge] = vertex.out_edges
+        for o_edge in out_edges:
+            if (o_edge.visited < o_edge.multiplicities):
+                o_edge.visited += 1
+                path.append(o_edge)
+                all_visited: bool = self.graph.check_all_visited()
+                o_vertex: Vertex = o_edge.out_vertex
+                if all_visited and o_vertex == end_vertex:
+                    return path, all_visited, o_vertex == end_vertex
+                else:
+                    path, all_visited, end_equal = self.dfs_visit(path=path, vertex=o_vertex, end_vertex=end_vertex)
+                    if all_visited and end_equal:
+                        return path, all_visited, end_equal
+            
+                path.remove(o_edge)
+                o_edge.visited -= 1
+    
+    
+    def find_eulerian_path(self) -> str:
+        start_vertex: Vertex = None
+        end_vertex: Vertex = None
+        for vertex in self.graph.vertex_list:
+            if vertex.compute_degree() == 1:
+                start_vertex = vertex
+            if vertex.compute_degree() == -1:
+                end_vertex = vertex
+        path: List[Edge] = []   
+        path, all_visited, end_equal = self.dfs_visit(path=path, vertex=start_vertex, end_vertex=end_vertex)
+        assert all_visited and end_equal
+        origin_string: str = ""
+        for i, edge in enumerate(path):
+            if i == 0:
+                origin_string += edge.sequence
+            else:
+                origin_string += edge.sequence[self.graph.k - 1:]
+                
+        return origin_string
+    

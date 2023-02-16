@@ -9,3 +9,9 @@ if __name__ == "__main__":
     print(assembly.is_eulerian())
     print("===================================================")
     print(assembly.graph)
+    print("===================================================")
+    if assembly.is_eulerian():
+        origin_string = assembly.find_eulerian_path()
+        print("Dãy ban đầu là: {}".format(origin_string))
+    else:
+        print("Đồ thị không phải là đồ thị Euler")
