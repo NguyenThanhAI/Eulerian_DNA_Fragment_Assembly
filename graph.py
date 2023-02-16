@@ -67,6 +67,22 @@ class Vertex(object):
         out_vertex.in_edges.append(edge)
         
         
+    def compute_degree(self) -> int:
+        """Tính độ chênh lệch bậc ra và bậc vào của đỉnh
+
+        Returns:
+            int: Độ chênh lệch bậc ra và bậc vào của đỉnh
+        """
+        in_degree: int = 0
+        for in_edge in self.in_edges:
+            in_degree += in_edge.multiplicities
+        out_degree: int = 0
+        for out_edge in self.out_edges:
+            out_degree += out_edge.multiplicities
+        
+        return out_degree - in_degree
+
+        
 class Edge(object):
     
     
@@ -514,13 +530,13 @@ class Graph(object):
                 read.position_to_edge[i] = edge
 
         for i, vertex in enumerate(self.vertex_list):
-            in_degree: int = 0
+            '''in_degree: int = 0
             for in_edge in vertex.in_edges:
                 in_degree += in_edge.multiplicities
             out_degree: int = 0
             for out_edge in vertex.out_edges:
-                out_degree += out_edge.multiplicities
-            print(i, vertex, len(vertex.out_edges) - len(vertex.in_edges), out_degree - in_degree)
+                out_degree += out_edge.multiplicities'''
+            print(i, vertex, len(vertex.out_edges) - len(vertex.in_edges), vertex.compute_degree())
     
      
     @staticmethod
