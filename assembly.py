@@ -113,12 +113,20 @@ class Assembler(object):
                 out_degree: int = 0
                 for out_edge in vertex.out_edges:
                     out_degree += out_edge.multiplicities'''
-                diff_mul = vertex.compute_degree()
+                
                 print(i, vertex, diff)
-                diff_list.append(diff_mul)
+                
+            diff_mul = vertex.compute_degree()
+            if diff_mul == 0:
+                continue
+            else:
+                if abs(diff_mul) >= 2:
+                    return False
+                else:
+                    diff_list.append(diff_mul)
             
         
-        if all(d == 0 for d in diff_list[1:-1]) and diff_list[0] * diff_list[-1] == -1:
+        if len(diff_list) == 2 and diff_list[0] * diff_list[-1] == -1:
             return True
         else:
             return False
