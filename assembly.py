@@ -53,13 +53,14 @@ class Assembler(object):
                     x_reads = x.reads.copy()
                     for y in out_edges:
                         # Kiểm tra từng read trong x xem x có thuộc vào read nào trong y hay không
-                        for read in x_reads:
-                            # Kiểm tra x và y có cùng một read
-                            if read in y.reads:
-                                # Kiểm tra x và y có liền kề nhau trong read này hay không
-                                if read.check_consecutive_edges(x=x, y=y):
-                                    if self.graph.merge(x=x, y=y):
-                                        self.graph.clean()
+                        if x.multiplicities == y.multiplicities:
+                            for read in x_reads:
+                                # Kiểm tra x và y có cùng một read
+                                if read in y.reads:
+                                    # Kiểm tra x và y có liền kề nhau trong read này hay không
+                                    if read.check_consecutive_edges(x=x, y=y):
+                                        if self.graph.merge(x=x, y=y):
+                                            self.graph.clean()
                                     
         self.graph.clean()
         
@@ -135,12 +136,13 @@ class Assembler(object):
                 if all_visited and o_vertex == end_vertex:
                     return path, all_visited, o_vertex == end_vertex
                 else:
-                    path, all_visited, end_equal = self.dfs_visit(path=path, vertex=o_vertex, end_vertex=end_vertex)
-                    if all_visited and end_equal:
-                        return path, all_visited, end_equal
-            
-                path.remove(o_edge)
-                o_edge.visited -= 1
+                    if o_vertex != end_vertex:
+                        path, all_visited, end_equal = self.dfs_visit(path=path, vertex=o_vertex, end_vertex=end_vertex)
+                        if all_visited and end_equal:
+                            return path, all_visited, end_equal
+                    else:
+                        path.remove(o_edge)
+                        o_edge.visited -= 1
     
     
     def find_eulerian_path(self) -> str:
