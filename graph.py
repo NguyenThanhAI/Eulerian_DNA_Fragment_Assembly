@@ -648,11 +648,14 @@ class Graph(object):
         y_length: int = len(y.sequence)
         seq: str = x.sequence + y.sequence[self.k-1:]
         
-        # Tạo một cạnh mới        
-        z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
+        # Tạo một cạnh mới
+        if seq in self.edge_dict:
+            z: Edge = self.edge_dict[seq]
+        else:        
+            z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
         
         # Kiểm tra bội số của cạnh x và y
-        assert x.multiplicities == y.multiplicities
+        assert x.multiplicities == y.multiplicities, print(x, y)
         z.multiplicities = x.multiplicities
         
         # Cập nhật các đỉnh và đường đi
@@ -708,8 +711,11 @@ class Graph(object):
         y_length: int = len(y.sequence)
         seq: str = x.sequence + y.sequence[self.k-1:]
         
-        # Tạo một cạnh mới        
-        z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
+        # Tạo một cạnh mới
+        if seq in self.edge_dict:
+            z: Edge = self.edge_dict[seq]
+        else:        
+            z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
         
         # Cập nhật bội số
         x.multiplicities = x.multiplicities - 1
