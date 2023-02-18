@@ -717,9 +717,11 @@ class Graph(object):
         else:        
             z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
         
+        min_multiplicities = min(x.multiplicities, y.multiplicities)
+        z.multiplicities = min_multiplicities
         # Cập nhật bội số
-        x.multiplicities = x.multiplicities - 1
-        y.multiplicities = y.multiplicities - 1
+        x.multiplicities = x.multiplicities - min_multiplicities
+        y.multiplicities = y.multiplicities - min_multiplicities
         
         if x.multiplicities == 0:
             if x in in_vertex.out_edges:
