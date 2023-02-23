@@ -38,7 +38,9 @@ class Assembler(object):
             num_in_edge: int = len(vertex.in_edges)
             num_out_edge: int = len(vertex.out_edges)
             # Đỉnh đầu hoặc đỉnh kết thúc nên bỏ qua
-            if (num_in_edge == 0 or num_out_edge == 0) and abs(num_in_edge - num_out_edge) == 1:
+            '''if (num_in_edge == 0 or num_out_edge == 0) and abs(num_in_edge - num_out_edge) == 1:
+                continue'''
+            if abs(vertex.compute_degree()) == 1:
                 continue
             # Đỉnh đã bị loại bỏ
             if num_in_edge == 0 and num_out_edge == 0:
@@ -75,7 +77,9 @@ class Assembler(object):
             num_in_edge: int = len(vertex.in_edges)
             num_out_edge: int = len(vertex.out_edges)
             diff: int = num_out_edge - num_in_edge
-            if (num_in_edge == 0 or num_out_edge == 0) and abs(diff) == 1:
+            '''if (num_in_edge == 0 or num_out_edge == 0) and abs(diff) == 1:
+                continue'''
+            if abs(vertex.compute_degree()) == 1:
                 continue
             if num_in_edge == 0 and num_out_edge == 0:
                 continue
