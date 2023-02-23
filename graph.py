@@ -216,7 +216,8 @@ class Read(object):
                     
             
             # Thêm read hiện tại và tập các read của cạnh mới
-            z.reads.append(self)
+            if self not in z.reads:
+                z.reads.append(self)
             
             self.add_edge_position(x=x, z=z, position=pos_of_edges[-1])
             
@@ -263,7 +264,8 @@ class Read(object):
                     self.edges[i] = z
             
             # Thêm read hiện tại và tập các read của cạnh mới
-            z.reads.append(self)
+            if self not in z.reads:
+                z.reads.append(self)
             
             self.add_edge_position(x=y, z=z, position=pos_of_edges[0])
             
@@ -332,7 +334,8 @@ class Read(object):
                         self.edges[j] = None
                         
                 # Thêm read hiện tại vào danh sách các read của cạnh mới z
-                z.reads.append(self)
+                if self not in z.reads:
+                    z.reads.append(self)
                 
                 self.add_edge_position(x=x, z=z, position=pos_of_edges[i])
                 # Đối với y thì không thế vị trí z vào vị trí y hiện tại
@@ -515,9 +518,11 @@ class Graph(object):
                     edge: Edge = self.new_edge(in_vertex=p_vertex, out_vertex=s_vertex, sequence=k_mer)
 
                 # Thêm cạnh vào danh sách cạnh của read
-                read.edges.append(edge)
+                if edge not in read.edges:
+                    read.edges.append(edge)
                 # Thêm read vào danh sách read của cạnh
-                edge.reads.append(read)
+                if read not in edge.reads:
+                    edge.reads.append(read)
                 # Vị trí của ký tự đầu tiên của edge trong read
                 if read not in edge.position_in_read:
                     edge.position_in_read[read] = [i]
