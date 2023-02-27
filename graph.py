@@ -399,7 +399,7 @@ class Read(object):
                 found_xy = True'''
         pos_of_edges: List[int] = list(self.position_to_edge.keys())
         for i in range(len(pos_of_edges)-1):
-            if (self.position_to_edge[pos_of_edges[i]] == x and self.position_to_edge[pos_of_edges[i+1]] == y) or (self.position_to_edge[pos_of_edges[i]] == y and self.position_to_edge[pos_of_edges[i+1]] == x):
+            if (self.position_to_edge[pos_of_edges[i]] == x and self.position_to_edge[pos_of_edges[i+1]] == y):
                 found_xy = True
         '''positions_x: List[int] = x.position_in_read[self]
         positions_y: List[int] = y.position_in_read[self]
@@ -715,6 +715,7 @@ class Graph(object):
         # Tạo chuỗi đại diện mới cho cạnh mới        
         y_length: int = len(y.sequence)
         seq: str = x.sequence + y.sequence[self.k-1:]
+        print("thành {}".format(seq), end=" ")
         
         # Tạo một cạnh mới
         if seq in self.edge_dict:
@@ -727,6 +728,7 @@ class Graph(object):
         # Cập nhật bội số
         x.multiplicities = x.multiplicities - min_multiplicities
         y.multiplicities = y.multiplicities - min_multiplicities
+        print("với bội số {}".format(min_multiplicities))
         
         if x.multiplicities == 0:
             if x in in_vertex.out_edges:

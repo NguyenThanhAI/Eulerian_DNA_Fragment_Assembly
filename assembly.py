@@ -86,13 +86,14 @@ class Assembler(object):
             #assert diff != 0, print(vertex)
             in_edges: List[Edge] = vertex.in_edges.copy()
             out_edges: List[Edge] = vertex.out_edges.copy()
+            print("=============================={}=======================================".format(vertex))
             for x in in_edges:
                 x_reads = x.reads.copy()
                 for y in out_edges:
                     for read in x_reads:
                         if read in y.reads:
                             if read.check_consecutive_edges(x=x, y=y):
-                                print("{} và {} gộp được".format(x.sequence, y.sequence))
+                                print("{} và {} gộp được".format(x.sequence, y.sequence), end=" ")
                                 if self.graph.merge_mul(x=x, y=y):
                                     self.graph.clean()
                                     break
