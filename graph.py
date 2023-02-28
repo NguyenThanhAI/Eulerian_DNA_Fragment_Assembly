@@ -411,14 +411,14 @@ class Read(object):
         return found_xy
     
     
-    def get_numbers_consecutive_positions(self, x: Edge, y: Edge) -> int:
-        numbers_consecutive: int = 0
+    def get_consecutive_positions(self, x: Edge, y: Edge) -> List[int]:
+        consecutive_pos: List[int] = []
         pos_of_edges: List[int] = list(self.position_to_edge.keys())
         for i in range(len(pos_of_edges)-1):
             if (self.position_to_edge[pos_of_edges[i]] == x and self.position_to_edge[pos_of_edges[i+1]] == y):
-                numbers_consecutive += 1
+                consecutive_pos.append(pos_of_edges[i+1])
                 
-        return numbers_consecutive
+        return consecutive_pos
                 
     
     def get_edges_position(self) -> List[int]:
@@ -737,9 +737,50 @@ class Graph(object):
         # Tính số bội trùng nhau (số vị trí liền kề liên tiếp trong các read, do các cạnh được merge với nhau có bội kề nhau nhưng một vài bội khác của hai cạnh x và y lại không kề nhau, vì vậy cần phải tính chi tiết có bao nhiêu bội đứng cạnh nhau trong các read)
         # Nhưng liệu có cần tính đến các đoạn overlap của các read?????????
         min_multiplicities: int = 0
+        read_to_consecutive_positions: Dict[Read, List[int]] = {}
         for read in self.read_list:
-            min_multiplicities += read.get_numbers_consecutive_positions(x=x, y=y)
+            consecutive_pos: List[int] = read.get_consecutive_positions(x=x, y=y)
+            if len(consecutive_pos) > 0:
+                read_to_consecutive_positions[read] = consecutive_pos
+        read_to_considered: Dict[Read, bool] = dict(zip(read_to_consecutive_positions.keys(), [False]*len(list(read_to_consecutive_positions.keys()))))
+        for read in read_to_consecutive_positions:
+            considered_reads = list(filter(lambda x: read_to_considered[x] is True, list(read_to_considered.keys())))
+            if len(considered_reads) == 0:
+                min_multiplicities += len(read_to_consecutive_positions[read])
+            else:
+                front_of: List[Read] = []
+                for fread in read.front_of:
+                    if fread in considered_reads:
+                        front_of.append(fread)
+                behind_of: List[Read] = []
+                for bread in read.behind_of:
+                    if bread in considered_reads:
+                        behind_of.append(bread)
+                positions: List[int] = read_to_consecutive_positions[read]
+                for pos in positions:
+                    coincide: bool = False
+                    for fread in front_of:
+                        over_pos = read.front_of[fread]
+                        if pos >= over_pos[0]:
+                            for fpos in read_to_consecutive_positions[fread]:
+                                if fpos < over_pos[1]:
+                                    coincide = True
+                    for bread in behind_of:
+                        over_pos = read.behind_of[bread]
+                        if pos < over_pos[1]:
+                            for bpos in read_to_consecutive_positions[bread]:
+                                if bpos >= over_pos[0]:
+                                    coincide = True
+                                    
+                    if not coincide:
+                        min_multiplicities += 1
+                    
+            read_to_considered[read] = True
+        
+        if min_multiplicities < x.multiplicities and min_multiplicities < y.multiplicities:
+            case = 3
         #min_multiplicities = min(x.multiplicities, y.multiplicities)
+        assert min_multiplicities <= min(x.multiplicities, y.multiplicities), print("x: {}, y: {}".format(x, y))
         z.multiplicities = min_multiplicities
         # Cập nhật bội số
         x.multiplicities = x.multiplicities - min_multiplicities
