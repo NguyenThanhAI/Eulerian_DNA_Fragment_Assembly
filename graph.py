@@ -410,6 +410,17 @@ class Read(object):
                 
         return found_xy
     
+    
+    def get_numbers_consecutive_positions(self, x: Edge, y: Edge) -> int:
+        numbers_consecutive: int = 0
+        pos_of_edges: List[int] = list(self.position_to_edge.keys())
+        for i in range(len(pos_of_edges)-1):
+            if (self.position_to_edge[pos_of_edges[i]] == x and self.position_to_edge[pos_of_edges[i+1]] == y):
+                numbers_consecutive += 1
+                
+        return numbers_consecutive
+                
+    
     def get_edges_position(self) -> List[int]:
         return self.position_to_edge.keys()
     
@@ -723,7 +734,12 @@ class Graph(object):
         else:        
             z: Edge = self.new_edge(in_vertex=in_vertex, out_vertex=out_vertex, sequence=seq)
         
-        min_multiplicities = min(x.multiplicities, y.multiplicities)
+        # Tính số bội trùng nhau (số vị trí liền kề liên tiếp trong các read, do các cạnh được merge với nhau có bội kề nhau nhưng một vài bội khác của hai cạnh x và y lại không kề nhau, vì vậy cần phải tính chi tiết có bao nhiêu bội đứng cạnh nhau trong các read)
+        # Nhưng liệu có cần tính đến các đoạn overlap của các read?????????
+        min_multiplicities: int = 0
+        for read in self.read_list:
+            min_multiplicities += read.get_numbers_consecutive_positions(x=x, y=y)
+        #min_multiplicities = min(x.multiplicities, y.multiplicities)
         z.multiplicities = min_multiplicities
         # Cập nhật bội số
         x.multiplicities = x.multiplicities - min_multiplicities
