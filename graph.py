@@ -583,7 +583,7 @@ class Graph(object):
         
         out: str = ""
         for edge in self.edge_list:
-            out = out + str(edge) + ": " + str(edge.in_vertex) + ", " + str(edge.out_vertex) + "\n"
+            out = out + str(edge) + ": " + str(edge.in_vertex) + ", " + str(edge.out_vertex) + ", multiplicities: " + str(edge.multiplicities) + "\n"
             
         return out
     
