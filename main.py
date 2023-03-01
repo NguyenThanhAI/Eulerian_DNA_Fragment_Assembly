@@ -11,6 +11,7 @@ if __name__ == "__main__":
     print(assembly.graph)
     print("===================================================")
     if assembly.is_eulerian():
+        print("Số đường đi Euler có thể là: {}".format(assembly.graph.get_numbers_eulerian_path()))
         origin_string = assembly.find_eulerian_path()
         print("Dãy ban đầu là: {}".format(origin_string))
     else:

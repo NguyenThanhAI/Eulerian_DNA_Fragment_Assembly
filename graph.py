@@ -5,6 +5,7 @@ from loader import Loader
 #from vertex import Vertex
 #from edge import Edge
 #from read import Read
+import numpy as np
 
 
 class Vertex(object):
@@ -81,6 +82,19 @@ class Vertex(object):
             out_degree += out_edge.multiplicities
         
         return out_degree - in_degree
+    
+    
+    def compute_out_degree(self) -> int:
+        """Tính bậc ra của đỉnh
+
+        Returns:
+            int: Bậc ra của đỉnh
+        """
+        out_degree: int = 0
+        for out_edge in self.out_edges:
+            out_degree += out_edge.multiplicities
+            
+        return out_degree
 
         
 class Edge(object):
@@ -864,3 +878,74 @@ class Graph(object):
             read_to_considered[read] = True
             
         return min_multiplicities
+    
+    @staticmethod
+    def factorial(n: int) -> int:
+        """Tính giai thừa
+
+        Args:
+            n (int): Số n
+
+        Returns:
+            int: Giai thừa n!
+        """
+        assert n >= 0
+        if n == 0:
+            return 1
+        
+        result: int = 1
+        for i in range(1, n + 1):
+            result *= i
+        return result
+    
+    
+    def get_numbers_eulerian_path(self) -> int:
+        """Tính số đường đi Euler có thể có sử dụng định lý BEST
+
+        Returns:
+            int: Số đường đi Euler có thể có của đồ thị
+        """       
+        vertex_list: List[Vertex] = self.vertex_list.copy()
+       
+        vertex_to_index: Dict[Vertex, int] = dict(zip(vertex_list, range(len(vertex_list))))
+       
+        adjacent_matrix: np.ndarray = np.zeros(shape=(len(vertex_list), len(vertex_list)), dtype=np.int32)
+       
+        diagonal_matrix: np.ndarray = np.zeros(shape=(len(vertex_list), len(vertex_list)), dtype=np.int32)
+        
+        start_vertex: Vertex = None
+        end_vertex: Vertex = None
+        for vertex in vertex_list:
+            if vertex.compute_degree() == 1:
+                start_vertex = vertex
+                
+            if vertex.compute_degree() == -1:
+                end_vertex = vertex
+            
+            out_edges = vertex.out_edges.copy()
+            for edge in out_edges:
+                assert vertex == edge.in_vertex
+                out_vertex = edge.out_vertex
+                adjacent_matrix[vertex_to_index[vertex], vertex_to_index[out_vertex]] += edge.multiplicities
+                
+            in_edges = vertex.in_edges.copy()
+            for edge in in_edges:
+                assert vertex == edge.out_vertex
+                diagonal_matrix[vertex_to_index[vertex], vertex_to_index[vertex]] += edge.multiplicities
+            
+        adjacent_matrix[vertex_to_index[end_vertex], vertex_to_index[start_vertex]] += 1
+        diagonal_matrix[vertex_to_index[start_vertex], vertex_to_index[start_vertex]] += 1
+        
+        laplacian_matrix: np.ndarray = diagonal_matrix - adjacent_matrix
+        
+        t_i = np.linalg.det(laplacian_matrix[1:, 1:])
+        
+        cumulative_out_degree: int = 1
+        for vertex in vertex_list:
+            if vertex == end_vertex:
+                cumulative_out_degree *= self.factorial(n=vertex.compute_out_degree())
+                continue
+                
+            cumulative_out_degree *= self.factorial(n=(vertex.compute_out_degree() - 1))
+            
+        return int(np.abs(t_i) * cumulative_out_degree)
