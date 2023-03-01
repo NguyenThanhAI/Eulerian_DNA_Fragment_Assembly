@@ -88,8 +88,12 @@ class Assembler(object):
             out_edges: List[Edge] = vertex.out_edges.copy()
             print("=============================={}=======================================".format(vertex))
             for x in in_edges:
+                if x.multiplicities == 0:
+                    continue
                 x_reads = x.reads.copy()
                 for y in out_edges:
+                    if x.multiplicities == 0 or y.multiplicities == 0 or x == y:
+                        continue
                     for read in x_reads:
                         if read in y.reads:
                             if read.check_consecutive_edges(x=x, y=y):

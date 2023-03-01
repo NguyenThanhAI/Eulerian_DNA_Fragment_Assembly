@@ -741,7 +741,7 @@ class Graph(object):
         if min_multiplicities < x.multiplicities and min_multiplicities < y.multiplicities:
             case = 3
         #min_multiplicities = min(x.multiplicities, y.multiplicities)
-        assert min_multiplicities <= min(x.multiplicities, y.multiplicities), print("x: {}, y: {}".format(x, y))
+        assert min_multiplicities <= min(x.multiplicities, y.multiplicities), print("\n min_multiplicities: {}, x: {}, {}, y: {}, {}".format(min_multiplicities, x, x.multiplicities, y, y.multiplicities))
         z.multiplicities = min_multiplicities
         # Cập nhật bội số
         x.multiplicities = x.multiplicities - min_multiplicities
